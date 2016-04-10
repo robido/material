@@ -90,6 +90,8 @@ function MdBottomSheetDirective($mdBottomSheet) {
  *   - `disableBackdrop` - `{boolean=}`: When set to true, the bottomsheet will not show a backdrop.
  *   - `escapeToClose` - `{boolean=}`: Whether the user can press escape to close the bottom sheet.
  *     Default true.
+ *   - `swipeToClose` - `{boolean=}`: Whether the user can swipe down to close the bottom sheet.
+ *     Default true.
  *   - `resolve` - `{object=}`: Similar to locals, except it takes promises as values
  *   and the bottom sheet will not open until the promises resolve.
  *   - `controllerAs` - `{string=}`: An alias to assign the controller to on the scope.
@@ -148,6 +150,7 @@ function MdBottomSheetProvider($$interimElementProvider) {
       onRemove: onRemove,
       disableBackdrop: false,
       escapeToClose: true,
+      swipeToClose: true,
       clickOutsideToClose: true,
       disableParentScroll: true
     };
@@ -167,7 +170,7 @@ function MdBottomSheetProvider($$interimElementProvider) {
         // Prevent mouse focus on backdrop; ONLY programatic focus allowed.
         // This allows clicks on backdrop to propogate to the $rootElement and
         // ESC key events to be detected properly.
-        
+
         backdrop[0].tabIndex = -1;
 
         if (options.clickOutsideToClose) {
@@ -181,7 +184,7 @@ function MdBottomSheetProvider($$interimElementProvider) {
         $animate.enter(backdrop, options.parent, null);
       }
 
-      var bottomSheet = new BottomSheet(element, options.parent);
+      var bottomSheet = new BottomSheet(element, options.parent, options);
       options.bottomSheet = bottomSheet;
 
       $mdTheming.inherit(bottomSheet.element, options.parent);
@@ -230,19 +233,23 @@ function MdBottomSheetProvider($$interimElementProvider) {
     /**
      * BottomSheet class to apply bottom-sheet behavior to an element
      */
-    function BottomSheet(element, parent) {
+    function BottomSheet(element, parent, options) {
       var deregister = $mdGesture.register(parent, 'drag', { horizontal: false });
-      parent.on('$md.dragstart', onDragStart)
+      if (options.swipeToClose) {
+        parent.on('$md.dragstart', onDragStart)
         .on('$md.drag', onDrag)
         .on('$md.dragend', onDragEnd);
+      }
 
       return {
         element: element,
         cleanup: function cleanup() {
           deregister();
-          parent.off('$md.dragstart', onDragStart);
-          parent.off('$md.drag', onDrag);
-          parent.off('$md.dragend', onDragEnd);
+          if (options.swipeToClose) {
+            parent.off('$md.dragstart', onDragStart);
+            parent.off('$md.drag', onDrag);
+            parent.off('$md.dragend', onDragEnd);
+          }
         }
       };
 
